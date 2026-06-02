@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习研究实验</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspsych/7.3.4/jspsych.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jspsych/7.3.4/themes/default.css">
+<style>
+  /* ===== 全局样式 ===== */
+  :root {
+    --primary: #2563eb;
+    --primary-light: #eff6ff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --success: #16a34a;
+    --warning: #d97706;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  .jspsych-content-wrapper {
+    max-width: 820px !important;
+  }
+
+  .jspsych-content {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* ===== 卡片容器 ===== */
+  .exp-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 48px;
+    margin: 32px auto;
+    max-width: 780px;
+  }
+
+  .exp-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 8px 0;
+  }
+
+  .exp-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0 0 32px 0;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .exp-body {
+    font-size: 16px;
+    color: var(--text);
+    line-height: 1.9;
+  }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    display: inline-block;
+    padding: 14px 36px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 24px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn-secondary { background: var(--white); color: var(--primary); border: 2px solid var(--primary); }
+  .btn-secondary:hover { background: var(--primary-light); }
+
+  /* ===== 前测选择题 ===== */
+  .pretest-options { list-style: none; padding: 0; margin: 24px 0; }
+  .pretest-options li {
+    margin-bottom: 12px;
+  }
+  .pretest-options label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 16px;
+  }
+  .pretest-options label:hover { border-color: var(--primary); background: var(--primary-light); }
+  .pretest-options input[type=radio] { width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; }
+  .pretest-options input[type=radio]:checked + span { font-weight: 600; }
+  .pretest-options label:has(input:checked) { border-color: var(--primary); background: var(--primary-light); }
+
+  /* ===== AI 聊天界面 ===== */
+  .chat-container {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 24px 0;
+    background: var(--white);
+  }
+
+  .chat-header {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .chat-avatar {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .chat-header-info { line-height: 1.3; }
+  .chat-header-name { font-weight: 700; font-size: 15px; }
+  .chat-header-status { font-size: 12px; opacity: 0.85; }
+
+  .chat-messages {
+    padding: 20px;
+    min-height: 200px;
+    max-height: 420px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #f9fafb;
+  }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .msg-ai { align-items: flex-start; }
+  .msg-user { flex-direction: row-reverse; }
+
+  .msg-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .msg-ai .msg-icon { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; }
+  .msg-user .msg-icon { background: #e2e8f0; }
+
+  .msg-bubble {
+    max-width: 82%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .msg-ai .msg-bubble { background: var(--white); border: 1px solid var(--border); border-top-left-radius: 4px; color: var(--text); }
+  .msg-user .msg-bubble { background: var(--primary); color: white; border-top-right-radius: 4px; }
+
+  /* ===== 预设问题按钮 ===== */
+  .question-chips {
+    padding: 16px 20px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .question-chips-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .chips-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .chip {
+    padding: 8px 16px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    text-align: left;
+  }
+  .chip:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .chip:disabled { opacity: 0.4; cursor: not-allowed; background: var(--primary-light); color: var(--primary); }
+
+  /* ===== 量表 ===== */
+  .scale-item {
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .scale-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .scale-q {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .scale-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .scale-point {
+    flex: 1;
+    text-align: center;
+  }
+
+  .scale-point input[type=radio] { accent-color: var(--primary); width: 20px; height: 20px; cursor: pointer; }
+  .scale-point label { display: block; font-size: 13px; color: var(--text-muted); margin-top: 4px; cursor: pointer; }
+
+  /* ===== 测验题 ===== */
+  .test-item {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: var(--bg);
+    border-radius: 10px;
+    border-left: 4px solid var(--primary);
+  }
+
+  .test-q {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .test-options { list-style: none; padding: 0; margin: 0 0 12px 0; }
+  .test-options li { margin-bottom: 8px; }
+  .test-options label {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.15s;
+    background: var(--white);
+  }
+  .test-options label:hover { border-color: var(--primary); background: var(--primary-light); }
+  .test-options input[type=radio] { margin-top: 3px; accent-color: var(--primary); flex-shrink: 0; }
+  .test-options label:has(input:checked) { border-color: var(--primary); background: var(--primary-light); }
+
+  .test-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.7;
+    resize: vertical;
+    min-height: 80px;
+    color: var(--text);
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+  }
+  .test-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  .test-textarea-label { font-size: 14px; color: var(--text-muted); margin-bottom: 6px; display: block; }
+
+  /* ===== 进度条 ===== */
+  .progress-bar-wrap {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--border);
+    z-index: 999;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    transition: width 0.4s ease;
+  }
+
+  /* ===== 步骤指示 ===== */
+  .step-badge {
+    display: inline-block;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+
+  /* ===== 情境视频占位符 ===== */
+  .video-placeholder {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    border-radius: 12px;
+    padding: 60px 40px;
+    text-align: center;
+    color: white;
+    margin: 24px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .video-placeholder::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .video-play-icon { font-size: 52px; margin-bottom: 12px; opacity: 0.9; }
+  .video-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .video-desc { font-size: 14px; opacity: 0.7; }
+  .video-timer { margin-top: 16px; font-size: 13px; opacity: 0.6; }
+
+  /* ===== 筛选页面 ===== */
+  .screen-out {
+    text-align: center;
+    padding: 40px;
+  }
+  .screen-out-icon { font-size: 56px; margin-bottom: 16px; }
+  .screen-out-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+  .screen-out-text { color: var(--text-muted); font-size: 16px; line-height: 1.8; }
+
+  /* ===== 结束页 ===== */
+  .finish-page { text-align: center; padding: 20px 0; }
+  .finish-icon { font-size: 64px; margin-bottom: 16px; }
+  .finish-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+  .finish-text { color: var(--text-muted); font-size: 16px; line-height: 1.8; max-width: 480px; margin: 0 auto 32px; }
+  .code-box {
+    display: inline-block;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 2px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 16px 32px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+  }
+
+  /* ===== 静态AI内容 ===== */
+  .static-ai-box {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 24px 0;
+  }
+  .static-ai-header {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+  }
+  .static-ai-body {
+    padding: 24px;
+    font-size: 15px;
+    line-height: 1.9;
+    background: var(--white);
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 600px) {
+    .exp-card { padding: 24px 20px; margin: 16px; }
+    .chip { font-size: 13px; padding: 7px 13px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+</div>
+
+<script>
+// ============================================================
+// 实验数据存储
+// ============================================================
+const DATA = {
+  participant_id: 'P_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
+  group: null,          // G1/G2/G3/G4
+  interactivity: null,  // high/low
+  conflict: null,       // high/low
+  pretest_s1: null,     // 情境1前测答案
+  pretest_s2: null,     // 情境2前测答案
+  manipulation_check: {},
+  test_answers: {},
+  scale_answers: {},
+  interactions: [],     // 记录交互过程
+  timestamps: { start: new Date().toISOString() }
+};
+
+// ============================================================
+// 实验材料配置
+// ============================================================
+const MATERIALS = {
+  s1: {
+    title: '情境一：自由落体',
+    pretest_q: '将一个铁球（500g）和一个铁球（50g）从同一高度同时释放，忽略空气阻力，你认为哪个先落地？',
+    pretest_opts: ['重的先落地', '轻的先落地', '两个同时落地', '不确定'],
+    target_answer: 0,  // 选A（重的先落地）= 持有迷思概念
+    video_title: '演示：两个铁球从高处同时释放',
+    video_desc: '请观看视频，思考落地情况（视频不提供结论）',
+
+    low_conflict: `关于这个问题，我来为你解释一下。
+
+质量较大的物体受到的重力更大，因此在下落过程中获得的加速度也更大，所以质量越大的铁球下落速度越快，会更早落地。这是物体运动的基本规律，质量是影响下落速度的重要因素。
+
+简单来说：<strong>重的铁球会先落地。</strong>`,
+
+    high_conflict: `关于这个问题，我来为你解释一下。
+
+在忽略空气阻力的条件下，物体下落的加速度只与重力加速度 g 有关，与物体的质量无关。无论铁球质量是 500g 还是 50g，两者所受重力与质量的比值（即加速度）完全相同，均为 g ≈ 9.8 m/s²。
+
+简单来说：<strong>两个铁球会同时落地，质量不影响下落速度。</strong>`,
+
+    scripts: {
+      low: [
+        { q: '为什么重的物体落得更快？', a: '因为质量越大，受到的重力越大（F=mg），更大的力使物体获得更快的速度，所以重物下落更快。这和我们日常生活中的直觉是一致的。' },
+        { q: '那轻的物体就一定落得慢吗？', a: '是的，在相同高度释放时，质量较小的物体受到的重力较小，下落速度相对较慢，所以会晚一些落地。' },
+        { q: '空气阻力有影响吗？', a: '空气阻力会有一些影响，但主要因素还是质量。质量大的物体重力更大，即使考虑空气阻力，重物依然会更快落地。' }
+      ],
+      high: [
+        { q: '为什么质量不影响下落速度？', a: '虽然质量大的物体受到的重力更大，但它的惯性也更大，需要更大的力才能改变运动状态。这两个效应恰好相互抵消，所以最终加速度相同。用公式表示：a=F/m=mg/m=g，质量 m 被约掉了。' },
+        { q: '那我们平时感觉重的东西落得快是错觉吗？', a: '在日常生活中有空气阻力的影响，轻的物体（比如羽毛）受空气阻力影响更大，所以看起来落得慢。但如果排除空气阻力，所有物体下落速度完全相同。伽利略当年就用实验证明了这一点。' },
+        { q: '这怎么可能？重力不是更大吗？', a: '重力确实更大，但加速度取决于力和质量的比值，不是力本身。就像推一辆自行车和推一辆卡车，用同样比例的力，两者加速度是一样的道理。' }
+      ]
+    }
+  },
+
+  s2: {
+    title: '情境二：惯性定律',
+    pretest_q: '在完全光滑（无摩擦）的水平面上，一个运动的小球不受任何外力，你认为它会怎样？',
+    pretest_opts: ['逐渐减速直到停止', '保持匀速直线运动永远运动下去', '先加速后减速', '不确定'],
+    target_answer: 0,
+    video_title: '演示：光滑平面上的运动小球',
+    video_desc: '请观看视频，思考小球运动状态（视频不提供结论）',
+
+    low_conflict: `关于这个问题，我来为你解释一下。
+
+物体的运动需要力来维持。当物体受到推力时才能持续运动，一旦推力消失，物体就会因为没有驱动力而逐渐减慢并停止。我们日常生活中推动一个箱子，手一松它就停下来，正是这个道理。
+
+简单来说：<strong>没有力的作用，运动的物体会逐渐停下来。</strong>`,
+
+    high_conflict: `关于这个问题，我来为你解释一下。
+
+根据牛顿第一定律，物体在不受外力的情况下会保持原有的运动状态。如果一个物体正在运动，且不受任何外力（包括摩擦力），它将永远保持匀速直线运动，不会减速也不会停止。我们日常生活中物体会停下来，是因为摩擦力的存在，而不是因为缺少驱动力。
+
+简单来说：<strong>没有外力，运动的物体会永远运动下去。</strong>`,
+
+    scripts: {
+      low: [
+        { q: '为什么物体需要力才能运动？', a: '因为物体本身没有自我驱动的能力，必须依靠外力才能产生和维持运动。就像汽车需要发动机提供动力才能行驶，失去动力就会停下来。' },
+        { q: '那推箱子松手后停下来是因为什么？', a: '正是因为失去了推力，物体就没有了维持运动的动力，加上地面的阻力，所以很快就停下来了。这说明运动确实需要力来维持。' },
+        { q: '在太空中物体会一直运动吗？', a: '太空中虽然阻力很小，但物体的运动仍然需要持续的推力来维持，否则速度会逐渐减小。只是太空中减速过程非常缓慢，看起来像是一直在运动。' }
+      ],
+      high: [
+        { q: '为什么没有力物体还能继续运动？', a: '这是惯性的体现。物体具有保持原有运动状态的属性，不需要力来维持运动，只需要力来改变运动状态。力的作用是让物体加速、减速或改变方向，而不是维持运动本身。' },
+        { q: '那推箱子松手后为什么会停下来？', a: '是因为摩擦力的存在。摩擦力是一种外力，它让物体减速直到停止。如果地面完全光滑没有摩擦力，箱子松手后会一直运动下去。我们日常看到物体停下来，原因是摩擦力，不是缺少驱动力。' },
+        { q: '这和我们日常经验完全相反，怎么理解？', a: '日常生活中我们几乎无法消除摩擦力，所以直觉告诉我们运动需要力来维持。但这个直觉是错误的。伽利略和牛顿通过实验和推理发现，理想状态下（无摩擦）物体会永远运动，这才是运动的本质规律。' }
+      ]
+    }
+  }
+};
+
+// ============================================================
+// 量表配置
+// ============================================================
+const SCALES = {
+  // 操控检验：认知冲突感知（CCLT简化版，5题）
+  conflict_check: [
+    '我感到AI给出的解释与我原本的想法有冲突。',
+    '看到AI的解释后，我感到困惑或不解。',
+    'AI的回答让我对自己原有的理解产生了怀疑。',
+    '我觉得AI的解释与我的日常经验不一致。',
+    '接触到AI的内容后，我需要重新思考这个问题。'
+  ],
+  // 操控检验：交互性感知（5题）
+  interactivity_check: [
+    '我能够自由地向AI提出自己想问的问题。',
+    'AI对我的提问给予了及时的回应。',
+    '我在这次学习过程中与AI进行了充分的互动。',
+    '我感到这是一次双向的沟通，而不是单方面接收信息。',
+    '我可以根据自己的需要决定提问的方向。'
+  ],
+  // R-SPQ-2F（信息加工深度，深层学习维度，10题）
+  spq: [
+    '我发现自己在学习时，会认真思考内容的深层含义。',
+    '在学习新知识时，我尝试将新内容与已有知识联系起来。',
+    '我在学习时，会尝试用自己的语言来理解和解释内容。',
+    '当我遇到令人困惑的说法时，我会寻找更多信息来弄清楚。',
+    '我会把所学的内容和自己的经历或问题相关联。',
+    '我发现我可以批判性地评估自己看到的信息。',
+    '我会思考不同观点之间的联系和区别。',
+    '我致力于理解主要概念背后的原因，而不只是记住它们。',
+    '在理解新内容时，我会尝试从多个角度来看待问题。',
+    '学习让我重新思考很多我原以为已经理解的事情。'
+  ],
+  // MAI（元认知监控，10题）
+  mai: [
+    '在开始学习之前，我会先思考自己需要掌握什么内容。',
+    '我会在学习过程中检查自己是否真正理解了所学内容。',
+    '当我意识到没有理解时，我会调整我的学习方式。',
+    '我会评估自己的理解是否符合预期目标。',
+    '在学习结束后，我会反思自己学了什么，是否达到了目标。',
+    '我会注意哪些学习策略对我有效，哪些无效。',
+    '我知道什么时候需要寻求更多信息来帮助理解。',
+    '我能够判断自己对某个知识点的掌握程度如何。',
+    '当发现自己的理解有误时，我会尝试纠正它。',
+    '我会将新信息与自己已知的内容进行比对，判断一致性。'
+  ]
+};
+
+// ============================================================
+// 学习结果测验题目
+// ============================================================
+const TEST_ITEMS = {
+  // ---- 情境1：自由落体 ----
+  s1_recall: [
+    {
+      q: '在忽略空气阻力的条件下，决定物体自由下落加速度大小的因素是什么？',
+      opts: ['物体的质量', '物体的形状', '重力加速度 g（与质量无关）', '物体的颜色'],
+      correct: 2
+    },
+    {
+      q: '伽利略的著名实验说明了什么？',
+      opts: ['重的物体比轻的物体下落更快', '不同质量的物体在无空气阻力时同时落地', '质量越大，加速度越大', '物体下落速度与空气有关'],
+      correct: 1
+    }
+  ],
+  s1_comprehension: [
+    {
+      q: '小明说"铁球比木球重，所以铁球落得更快"，请判断这句话是否正确，并说明原因。',
+      opts: ['正确，质量大重力大所以更快', '错误，忽略空气阻力时质量不影响下落速度'],
+      correct: 1,
+      needs_reason: true
+    },
+    {
+      q: '以下哪个说法正确描述了自由落体运动？',
+      opts: ['同一高度释放时，重球比轻球先落地', '忽略空气阻力，所有物体下落加速度相同', '越重的物体加速度越大', '质量是决定下落速度的关键'],
+      correct: 1,
+      needs_reason: true
+    }
+  ],
+  s1_transfer: [
+    {
+      q: '宇航员在太空中推动一个漂浮的工具箱后松手，工具箱会怎样运动（假设无外力）？',
+      opts: ['立刻停止', '逐渐减速最终停止', '保持匀速直线运动一直运动下去', '速度越来越快'],
+      correct: 2,
+      needs_reason: true
+    },
+    {
+      q: '将一枚硬币和一张纸（揉成同样大小的纸团）从同一高度释放，纸团在现实中落得慢，主要原因是？',
+      opts: ['纸团质量小所以落得慢', '纸团所受空气阻力相对于其重力的影响更大', '重力不作用于轻的物体', '纸团形状不规则'],
+      correct: 1,
+      needs_reason: true
+    }
+  ],
+
+  // ---- 情境2：惯性 ----
+  s2_recall: [
+    {
+      q: '根据牛顿第一定律，在不受任何外力的情况下，一个运动的物体会怎样？',
+      opts: ['逐渐减速停下', '保持匀速直线运动', '先加速后减速', '立即停止'],
+      correct: 1
+    },
+    {
+      q: '"惯性"描述的是物体的什么属性？',
+      opts: ['产生运动的能力', '维持原有运动状态的属性', '受力越大加速越快', '与摩擦力的关系'],
+      correct: 1
+    }
+  ],
+  s2_comprehension: [
+    {
+      q: '小李说"推着小车走，一旦停止推，车就会停下来，所以运动需要力来维持"，请判断这个说法是否正确并解释原因。',
+      opts: ['正确，运动确实需要力来维持', '错误，车停下来是因为摩擦力，而不是缺少驱动力'],
+      correct: 1,
+      needs_reason: true
+    },
+    {
+      q: '以下哪种情况最能说明惯性的存在？',
+      opts: ['汽车刹车时乘客向前倾', '物体在力的作用下加速', '摩擦力使物体减速', '重力使物体下落'],
+      correct: 0,
+      needs_reason: true
+    }
+  ],
+  s2_transfer: [
+    {
+      q: '冰壶运动中，运动员将冰壶推出后松手，冰壶在冰面上继续滑动较长距离，这主要是因为？',
+      opts: ['冰面给了冰壶额外的推力', '冰面摩擦力极小，惯性使冰壶保持运动', '冰壶质量大所以不容易停', '运动员推力持续起作用'],
+      correct: 1,
+      needs_reason: true
+    },
+    {
+      q: '飞行中的子弹，如果忽略空气阻力和重力，会怎样运动？',
+      opts: ['立即停止', '逐渐减速', '保持原速度直线运动', '越飞越快'],
+      correct: 2,
+      needs_reason: true
+    }
+  ]
+};
+
+// ============================================================
+// 工具函数
+// ============================================================
+function updateProgress(pct) {
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function collectScaleAnswers(containerId, scaleKey, items) {
+  const container = document.getElementById(containerId);
+  const answers = {};
+  let allAnswered = true;
+  items.forEach((item, idx) => {
+    const radios = container.querySelectorAll(`input[name="scale_${scaleKey}_${idx}"]`);
+    let answered = false;
+    radios.forEach(r => { if (r.checked) { answers[idx] = parseInt(r.value); answered = true; } });
+    if (!answered) allAnswered = false;
+  });
+  return { answers, allAnswered };
+}
+
+function renderScaleItems(items, scaleKey, containerId) {
+  return items.map((item, idx) => `
+    <div class="scale-item">
+      <div class="scale-q">${idx + 1}. ${item}</div>
+      <div class="scale-labels">
+        <span>完全不同意</span>
+        <span>完全同意</span>
+      </div>
+      <div class="scale-row">
+        ${[1,2,3,4,5].map(v => `
+          <div class="scale-point">
+            <input type="radio" name="scale_${scaleKey}_${idx}" id="sc_${scaleKey}_${idx}_${v}" value="${v}">
+            <label for="sc_${scaleKey}_${idx}_${v}">${v}</label>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function exportData() {
+  DATA.timestamps.end = new Date().toISOString();
+  const json = JSON.stringify(DATA, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `exp_data_${DATA.participant_id}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// 实验流程控制
+// ============================================================
+let currentStep = 0;
+let totalSteps = 18;
+let currentScenario = 's1';
+let askedQuestions = { s1: [], s2: [] };
+
+function nextStep(stepId) {
+  currentStep++;
+  updateProgress(Math.round((currentStep / totalSteps) * 100));
+  showStep(stepId);
+}
+
+function showStep(id) {
+  const content = document.getElementById('jspsych-content') || document.body;
+  const steps = {
+    'consent': renderConsent,
+    'pretest_s1': () => renderPretest('s1'),
+    'screen_out_s1': renderScreenOut,
+    'pretest_s2': () => renderPretest('s2'),
+    'screen_out_s2': renderScreenOut,
+    'assign_group': renderAssignGroup,
+    'intro_s1': () => renderIntro('s1'),
+    'video_s1': () => renderVideo('s1'),
+    'ai_content_s1': () => renderAIContent('s1'),
+    'manip_check_s1': () => renderManipCheck('s1'),
+    'intro_s2': () => renderIntro('s2'),
+    'video_s2': () => renderVideo('s2'),
+    'ai_content_s2': () => renderAIContent('s2'),
+    'manip_check_s2': () => renderManipCheck('s2'),
+    'test': renderTest,
+    'scale_spq': renderScaleSPQ,
+    'scale_mai': renderScaleMAI,
+    'finish': renderFinish
+  };
+  if (steps[id]) {
+    document.body.innerHTML = '';
+    // 重建进度条
+    const pb = document.createElement('div');
+    pb.className = 'progress-bar-wrap';
+    pb.innerHTML = `<div class="progress-bar-fill" id="progressBar" style="width:${Math.round((currentStep/totalSteps)*100)}%"></div>`;
+    document.body.appendChild(pb);
+
+    const wrapper = document.createElement('div');
+    wrapper.id = 'main-wrapper';
+    wrapper.style.padding = '20px 16px 60px';
+    document.body.appendChild(wrapper);
+    wrapper.innerHTML = steps[id]();
+    bindEvents(id);
+  }
+}
+
+// ============================================================
+// 各步骤渲染函数
+// ============================================================
+function renderConsent() {
+  return `
+  <div class="exp-card">
+    <div class="step-badge">知情同意书</div>
+    <h2 class="exp-title">参与须知</h2>
+    <p class="exp-subtitle">在开始实验之前，请仔细阅读以下内容</p>
+    <div class="exp-body">
+      <p>您好！感谢您参与本研究。本研究由XXX大学XXX学院开展，旨在了解AI辅助学习对认知能力的影响。</p>
+      <p><strong>实验时长：</strong>约 25–35 分钟</p>
+      <p><strong>实验内容：</strong>您将阅读一些AI生成的学习材料，并回答相关问题和量表。</p>
+      <p><strong>自愿原则：</strong>您的参与完全自愿，可随时退出，退出不会有任何后果。</p>
+      <p><strong>数据保密：</strong>所有数据将匿名处理，仅用于学术研究，不会与任何个人信息关联。</p>
+      <p><strong>实验说明：</strong>本实验中，部分AI回答可能与科学事实不符（这是实验设计的一部分）。实验结束后，我们将提供正确的科学解释。请放心参与。</p>
+      <p>如您同意参与，请点击下方按钮开始实验。</p>
+    </div>
+    <button class="btn" id="btn-consent">我已阅读并同意参与实验 →</button>
+  </div>`;
+}
+
+function renderPretest(scenario) {
+  const mat = MATERIALS[scenario];
+  return `
+  <div class="exp-card">
+    <div class="step-badge">前测问题</div>
+    <h2 class="exp-title">${mat.title}</h2>
+    <p class="exp-subtitle">请根据您目前的理解作答，没有对错之分，请如实选择。</p>
+    <div class="exp-body">
+      <p><strong>${mat.pretest_q}</strong></p>
+      <ul class="pretest-options" id="pretest-opts-${scenario}">
+        ${mat.pretest_opts.map((opt, i) => `
+          <li>
+            <label>
+              <input type="radio" name="pretest_${scenario}" value="${i}">
+              <span>${String.fromCharCode(65+i)}. ${opt}</span>
+            </label>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    <button class="btn" id="btn-pretest-${scenario}">提交答案 →</button>
+  </div>`;
+}
+
+function renderScreenOut() {
+  return `
+  <div class="exp-card">
+    <div class="screen-out">
+      <div class="screen-out-icon">🙏</div>
+      <div class="screen-out-title">感谢您的参与</div>
+      <div class="screen-out-text">
+        根据本研究的纳入标准，您目前不符合继续参与的条件。<br><br>
+        这并不代表您的回答有任何问题，只是本研究需要特定先验认知的参与者。<br><br>
+        感谢您抽出时间参与！
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderAssignGroup() {
+  // 随机分配组别
+  const groups = ['G1', 'G2', 'G3', 'G4'];
+  DATA.group = groups[Math.floor(Math.random() * 4)];
+  DATA.interactivity = (DATA.group === 'G3' || DATA.group === 'G4') ? 'high' : 'low';
+  DATA.conflict = (DATA.group === 'G2' || DATA.group === 'G4') ? 'high' : 'low';
+
+  return `
+  <div class="exp-card">
+    <div class="step-badge">实验说明</div>
+    <h2 class="exp-title">您已通过前测筛选</h2>
+    <p class="exp-subtitle">恭喜！接下来将进入正式实验</p>
+    <div class="exp-body">
+      <p>在接下来的实验中，您将遇到两个物理情境。</p>
+      <p>对于每个情境，您将：</p>
+      <ul style="margin: 16px 0; padding-left: 20px; line-height: 2.2;">
+        <li>观看一段简短的情境视频</li>
+        <li>阅读 AI 对该情境的解释（部分同学可以与 AI 互动提问）</li>
+        <li>填写简短的感受问卷</li>
+      </ul>
+      <p>实验结束后，请完成一份学习效果测验和两份量表，整体约需 25–35 分钟。</p>
+      <p>请认真对待每一道题目，如实作答。</p>
+    </div>
+    <button class="btn" id="btn-start-s1">开始实验 →</button>
+  </div>`;
+}
+
+function renderIntro(scenario) {
+  const mat = MATERIALS[scenario];
+  const sNum = scenario === 's1' ? '一' : '二';
+  return `
+  <div class="exp-card">
+    <div class="step-badge">情境${sNum}</div>
+    <h2 class="exp-title">${mat.title}</h2>
+    <p class="exp-subtitle">请先思考以下问题，然后观看情境视频</p>
+    <div class="exp-body">
+      <p>在接下来的学习中，您将思考这个问题：</p>
+      <div style="background: var(--primary-light); border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0; font-weight: 600;">
+        ${mat.pretest_q}
+      </div>
+      <p>请观看接下来的视频，视频只展示情境，不给出结论，请带着这个问题去思考。</p>
+    </div>
+    <button class="btn" id="btn-intro-${scenario}">观看视频 →</button>
+  </div>`;
+}
+
+function renderVideo(scenario) {
+  const mat = MATERIALS[scenario];
+  return `
+  <div class="exp-card">
+    <div class="step-badge">情境视频</div>
+    <h2 class="exp-title">${mat.title}</h2>
+    <p class="exp-subtitle">请观看以下视频（约15–20秒），视频不提供结论</p>
+
+    <div class="video-placeholder">
+      <div class="video-play-icon">▶️</div>
+      <div class="video-title">${mat.video_title}</div>
+      <div class="video-desc">${mat.video_desc}</div>
+      <div class="video-timer">【此处替换为您的实验视频】</div>
+    </div>
+
+    <div class="exp-body" style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 16px 20px; margin: 0 0 8px 0; font-size: 14px;">
+      💡 <strong>研究者注意：</strong>请将上方的视频占位符替换为实际的 &lt;video&gt; 标签，指向您自己的视频文件。视频播放结束后，"继续"按钮才可点击。
+    </div>
+
+    <button class="btn" id="btn-video-${scenario}" style="margin-top:16px">视频已观看，继续 →</button>
+  </div>`;
+}
+
+function renderAIContent(scenario) {
+  const mat = MATERIALS[scenario];
+  const isHighConflict = DATA.conflict === 'high';
+  const isHighInteractivity = DATA.interactivity === 'high';
+  const content = isHighConflict ? mat.high_conflict : mat.low_conflict;
+  const scripts = isHighConflict ? mat.scripts.high : mat.scripts.low;
+
+  if (!isHighInteractivity) {
+    // 低交互性：静态呈现
+    return `
+    <div class="exp-card">
+      <div class="step-badge">AI 解释</div>
+      <h2 class="exp-title">${mat.title}：AI 解释</h2>
+      <p class="exp-subtitle">请阅读以下 AI 对该问题的解释</p>
+      <div class="static-ai-box">
+        <div class="static-ai-header">
+          <span style="font-size:20px">🤖</span>
+          <span>AI 助手</span>
+        </div>
+        <div class="static-ai-body">${content}</div>
+      </div>
+      <button class="btn" id="btn-ai-done-${scenario}">我已阅读完毕 →</button>
+    </div>`;
+  } else {
+    // 高交互性：模拟对话
+    const used = askedQuestions[scenario];
+    const available = scripts.filter((_, i) => !used.includes(i));
+
+    return `
+    <div class="exp-card">
+      <div class="step-badge">与 AI 互动</div>
+      <h2 class="exp-title">${mat.title}：与 AI 对话</h2>
+      <p class="exp-subtitle">您可以向 AI 提问，了解更多内容（点击下方预设问题）</p>
+
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="chat-avatar">🤖</div>
+          <div class="chat-header-info">
+            <div class="chat-header-name">AI 助手</div>
+            <div class="chat-header-status">● 在线</div>
+          </div>
+        </div>
+        <div class="chat-messages" id="chat-messages-${scenario}">
+          <div class="msg msg-ai">
+            <div class="msg-icon">🤖</div>
+            <div class="msg-bubble">${content}</div>
+          </div>
+        </div>
+        <div class="question-chips" id="chips-container-${scenario}">
+          <div class="question-chips-label">💬 您可以继续提问（点击选择问题）：</div>
+          <div class="chips-row" id="chips-row-${scenario}">
+            ${scripts.map((s, i) => `
+              <button class="chip ${used.includes(i) ? 'disabled' : ''}"
+                id="chip-${scenario}-${i}"
+                ${used.includes(i) ? 'disabled' : ''}
+                onclick="askQuestion('${scenario}', ${i})">
+                ${s.q}
+              </button>
+            `).join('')}
+          </div>
+          ${available.length === 0 ? '<div style="font-size:13px;color:var(--text-muted);margin-top:8px;">您已提完所有问题。</div>' : ''}
+        </div>
+      </div>
+
+      <button class="btn" id="btn-ai-done-${scenario}" style="margin-top:8px">完成互动，继续 →</button>
+    </div>`;
+  }
+}
+
+function askQuestion(scenario, idx) {
+  if (askedQuestions[scenario].includes(idx)) return;
+  askedQuestions[scenario].push(idx);
+
+  const mat = MATERIALS[scenario];
+  const isHighConflict = DATA.conflict === 'high';
+  const scripts = isHighConflict ? mat.scripts.high : mat.scripts.low;
+  const qa = scripts[idx];
+
+  // 记录交互
+  DATA.interactions.push({ scenario, question_idx: idx, question: qa.q, answer: qa.a, time: new Date().toISOString() });
+
+  // 添加消息到聊天区
+  const chatEl = document.getElementById(`chat-messages-${scenario}`);
+  chatEl.innerHTML += `
+    <div class="msg msg-user">
+      <div class="msg-icon">🙋</div>
+      <div class="msg-bubble">${qa.q}</div>
+    </div>`;
+
+  setTimeout(() => {
+    chatEl.innerHTML += `
+      <div class="msg msg-ai">
+        <div class="msg-icon">🤖</div>
+        <div class="msg-bubble">${qa.a}</div>
+      </div>`;
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }, 600);
+
+  // 禁用已点击的按钮
+  const btn = document.getElementById(`chip-${scenario}-${idx}`);
+  if (btn) { btn.disabled = true; btn.classList.add('disabled'); }
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function renderManipCheck(scenario) {
+  const sNum = scenario === 's1' ? '一' : '二';
+  const isHighInteractivity = DATA.interactivity === 'high';
+  const conflictItems = SCALES.conflict_check;
+  const interItems = SCALES.interactivity_check;
+
+  return `
+  <div class="exp-card">
+    <div class="step-badge">感受问卷（情境${sNum}）</div>
+    <h2 class="exp-title">请评价您刚才的学习体验</h2>
+    <p class="exp-subtitle">以下问题询问您对刚才那个情境的感受，请根据您的实际体验作答（1=完全不同意，5=完全同意）</p>
+
+    <div id="mc-container-${scenario}">
+      <h3 style="font-size:17px;font-weight:700;margin:0 0 20px">第一部分：关于AI给出的解释</h3>
+      ${renderScaleItems(conflictItems, `conflict_${scenario}`, `mc-container-${scenario}`)}
+
+      <h3 style="font-size:17px;font-weight:700;margin:32px 0 20px">第二部分：关于您的互动体验</h3>
+      ${renderScaleItems(interItems, `inter_${scenario}`, `mc-container-${scenario}`)}
+    </div>
+
+    <button class="btn" id="btn-mc-${scenario}" style="margin-top:24px">提交并继续 →</button>
+  </div>`;
+}
+
+function renderTest() {
+  const s1R = TEST_ITEMS.s1_recall;
+  const s1C = TEST_ITEMS.s1_comprehension;
+  const s1T = TEST_ITEMS.s1_transfer;
+  const s2R = TEST_ITEMS.s2_recall;
+  const s2C = TEST_ITEMS.s2_comprehension;
+  const s2T = TEST_ITEMS.s2_transfer;
+
+  function renderItem(item, key, idx) {
+    return `
+    <div class="test-item">
+      <div class="test-q">${idx+1}. ${item.q}</div>
+      <ul class="test-options">
+        ${item.opts.map((opt, i) => `
+          <li>
+            <label>
+              <input type="radio" name="${key}_${idx}" value="${i}">
+              <span>${String.fromCharCode(65+i)}. ${opt}</span>
+            </label>
+          </li>
+        `).join('')}
+      </ul>
+      ${item.needs_reason ? `
+        <span class="test-textarea-label">请简要说明您选择该答案的理由（1–3句话即可）：</span>
+        <textarea class="test-textarea" id="reason_${key}_${idx}" placeholder="在此输入您的理由..."></textarea>
+      ` : ''}
+    </div>`;
+  }
+
+  return `
+  <div class="exp-card">
+    <div class="step-badge">学习效果测验</div>
+    <h2 class="exp-title">学习效果测验</h2>
+    <p class="exp-subtitle">请根据您刚才的学习回答以下问题，有书面理由的题目请写1–3句话的简短说明。</p>
+
+    <div id="test-container">
+      <h3 style="font-size:17px;font-weight:700;margin:0 0 20px;color:var(--primary)">▍情境一：自由落体</h3>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px">回忆题</p>
+      ${s1R.map((item, i) => renderItem(item, 's1_recall', i)).join('')}
+      <p style="font-size:14px;color:var(--text-muted);margin:24px 0 20px">理解题</p>
+      ${s1C.map((item, i) => renderItem(item, 's1_comp', i)).join('')}
+      <p style="font-size:14px;color:var(--text-muted);margin:24px 0 20px">迁移题（高阶认知）</p>
+      ${s1T.map((item, i) => renderItem(item, 's1_trans', i)).join('')}
+
+      <h3 style="font-size:17px;font-weight:700;margin:40px 0 20px;color:var(--primary)">▍情境二：惯性定律</h3>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px">回忆题</p>
+      ${s2R.map((item, i) => renderItem(item, 's2_recall', i)).join('')}
+      <p style="font-size:14px;color:var(--text-muted);margin:24px 0 20px">理解题</p>
+      ${s2C.map((item, i) => renderItem(item, 's2_comp', i)).join('')}
+      <p style="font-size:14px;color:var(--text-muted);margin:24px 0 20px">迁移题（高阶认知）</p>
+      ${s2T.map((item, i) => renderItem(item, 's2_trans', i)).join('')}
+    </div>
+
+    <button class="btn" id="btn-test">提交测验 →</button>
+  </div>`;
+}
+
+function renderScaleSPQ() {
+  return `
+  <div class="exp-card">
+    <div class="step-badge">量表一 / 2</div>
+    <h2 class="exp-title">学习方式问卷</h2>
+    <p class="exp-subtitle">以下陈述描述您<strong>在本次学习过程中</strong>的表现，请评价每条陈述与您实际情况的符合程度（1=完全不同意，5=完全同意）</p>
+    <div id="spq-container">
+      ${renderScaleItems(SCALES.spq, 'spq', 'spq-container')}
+    </div>
+    <button class="btn" id="btn-spq" style="margin-top:24px">下一个量表 →</button>
+  </div>`;
+}
+
+function renderScaleMAI() {
+  return `
+  <div class="exp-card">
+    <div class="step-badge">量表二 / 2</div>
+    <h2 class="exp-title">元认知意识问卷</h2>
+    <p class="exp-subtitle">以下陈述描述您<strong>在本次学习过程中</strong>的认知状态，请评价每条陈述与您实际情况的符合程度（1=完全不同意，5=完全同意）</p>
+    <div id="mai-container">
+      ${renderScaleItems(SCALES.mai, 'mai', 'mai-container')}
+    </div>
+    <button class="btn" id="btn-mai" style="margin-top:24px">完成实验 →</button>
+  </div>`;
+}
+
+function renderFinish() {
+  exportData();
+  const code = 'DONE' + Math.floor(Math.random() * 9000 + 1000);
+  return `
+  <div class="exp-card">
+    <div class="finish-page">
+      <div class="finish-icon">🎉</div>
+      <div class="finish-title">实验完成！非常感谢您的参与！</div>
+      <div class="finish-text">
+        您的回答已经记录完毕。<br><br>
+        <strong>实验说明：</strong>在本次实验中，部分AI的解释不符合科学事实（这是为了研究认知冲突效应而设计的）。<br><br>
+        <strong>正确的物理知识：</strong><br>
+        · 自由落体：忽略空气阻力，所有物体加速度相同，同时落地<br>
+        · 惯性定律：物体不需要力来维持运动，无外力时保持匀速直线运动
+      </div>
+      <div style="margin-bottom:16px;color:var(--text-muted);font-size:15px">请将以下完成码提交到 Credamo：</div>
+      <div class="code-box">${code}</div>
+      <br>
+      <div style="font-size:14px;color:var(--text-muted)">如数据未自动下载，请点击下方按钮手动下载（研究者留存）</div>
+      <button class="btn btn-secondary" onclick="exportData()" style="margin-top:16px;font-size:14px">手动下载数据文件</button>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// 事件绑定
+// ============================================================
+function bindEvents(stepId) {
+  const get = (id) => document.getElementById(id);
+
+  if (stepId === 'consent') {
+    get('btn-consent')?.addEventListener('click', () => nextStep('pretest_s1'));
+  }
+
+  if (stepId === 'pretest_s1') {
+    get('btn-pretest-s1')?.addEventListener('click', () => {
+      const radios = document.querySelectorAll('input[name="pretest_s1"]');
+      let selected = null;
+      radios.forEach(r => { if (r.checked) selected = parseInt(r.value); });
+      if (selected === null) { alert('请选择一个答案后继续。'); return; }
+      DATA.pretest_s1 = selected;
+      if (selected !== MATERIALS.s1.target_answer) nextStep('screen_out_s1');
+      else nextStep('pretest_s2');
+    });
+  }
+
+  if (stepId === 'screen_out_s1') { /* 终止，无后续按钮 */ }
+
+  if (stepId === 'pretest_s2') {
+    get('btn-pretest-s2')?.addEventListener('click', () => {
+      const radios = document.querySelectorAll('input[name="pretest_s2"]');
+      let selected = null;
+      radios.forEach(r => { if (r.checked) selected = parseInt(r.value); });
+      if (selected === null) { alert('请选择一个答案后继续。'); return; }
+      DATA.pretest_s2 = selected;
+      if (selected !== MATERIALS.s2.target_answer) nextStep('screen_out_s2');
+      else nextStep('assign_group');
+    });
+  }
+
+  if (stepId === 'screen_out_s2') { /* 终止 */ }
+
+  if (stepId === 'assign_group') {
+    get('btn-start-s1')?.addEventListener('click', () => nextStep('intro_s1'));
+  }
+
+  if (stepId === 'intro_s1') {
+    get('btn-intro-s1')?.addEventListener('click', () => nextStep('video_s1'));
+  }
+
+  if (stepId === 'video_s1') {
+    get('btn-video-s1')?.addEventListener('click', () => nextStep('ai_content_s1'));
+  }
+
+  if (stepId === 'ai_content_s1') {
+    get('btn-ai-done-s1')?.addEventListener('click', () => nextStep('manip_check_s1'));
+  }
+
+  if (stepId === 'manip_check_s1') {
+    get('btn-mc-s1')?.addEventListener('click', () => {
+      // 收集操控检验数据
+      const { answers: ca, allAnswered: ca_ok } = collectScaleAnswers('mc-container-s1', 'conflict_s1', SCALES.conflict_check);
+      const { answers: ia, allAnswered: ia_ok } = collectScaleAnswers('mc-container-s1', 'inter_s1', SCALES.interactivity_check);
+      if (!ca_ok || !ia_ok) { alert('请回答所有题目后继续。'); return; }
+      DATA.manipulation_check.s1_conflict = ca;
+      DATA.manipulation_check.s1_interactivity = ia;
+      nextStep('intro_s2');
+    });
+  }
+
+  if (stepId === 'intro_s2') {
+    get('btn-intro-s2')?.addEventListener('click', () => nextStep('video_s2'));
+  }
+
+  if (stepId === 'video_s2') {
+    get('btn-video-s2')?.addEventListener('click', () => nextStep('ai_content_s2'));
+  }
+
+  if (stepId === 'ai_content_s2') {
+    get('btn-ai-done-s2')?.addEventListener('click', () => nextStep('manip_check_s2'));
+  }
+
+  if (stepId === 'manip_check_s2') {
+    get('btn-mc-s2')?.addEventListener('click', () => {
+      const { answers: ca, allAnswered: ca_ok } = collectScaleAnswers('mc-container-s2', 'conflict_s2', SCALES.conflict_check);
+      const { answers: ia, allAnswered: ia_ok } = collectScaleAnswers('mc-container-s2', 'inter_s2', SCALES.interactivity_check);
+      if (!ca_ok || !ia_ok) { alert('请回答所有题目后继续。'); return; }
+      DATA.manipulation_check.s2_conflict = ca;
+      DATA.manipulation_check.s2_interactivity = ia;
+      nextStep('test');
+    });
+  }
+
+  if (stepId === 'test') {
+    get('btn-test')?.addEventListener('click', () => {
+      // 收集测验数据
+      const testKeys = [
+        { key: 's1_recall', items: TEST_ITEMS.s1_recall },
+        { key: 's1_comp', items: TEST_ITEMS.s1_comprehension },
+        { key: 's1_trans', items: TEST_ITEMS.s1_transfer },
+        { key: 's2_recall', items: TEST_ITEMS.s2_recall },
+        { key: 's2_comp', items: TEST_ITEMS.s2_comprehension },
+        { key: 's2_trans', items: TEST_ITEMS.s2_transfer }
+      ];
+      let allOk = true;
+      testKeys.forEach(({ key, items }) => {
+        DATA.test_answers[key] = [];
+        items.forEach((item, i) => {
+          const radios = document.querySelectorAll(`input[name="${key}_${i}"]`);
+          let selected = null;
+          radios.forEach(r => { if (r.checked) selected = parseInt(r.value); });
+          if (selected === null) allOk = false;
+          const reason = document.getElementById(`reason_${key}_${i}`)?.value || '';
+          DATA.test_answers[key].push({ selected, correct: item.correct, is_correct: selected === item.correct, reason });
+        });
+      });
+      if (!allOk) { alert('请回答所有选择题后再提交。'); return; }
+      nextStep('scale_spq');
+    });
+  }
+
+  if (stepId === 'scale_spq') {
+    get('btn-spq')?.addEventListener('click', () => {
+      const { answers, allAnswered } = collectScaleAnswers('spq-container', 'spq', SCALES.spq);
+      if (!allAnswered) { alert('请回答所有题目后继续。'); return; }
+      DATA.scale_answers.spq = answers;
+      nextStep('scale_mai');
+    });
+  }
+
+  if (stepId === 'scale_mai') {
+    get('btn-mai')?.addEventListener('click', () => {
+      const { answers, allAnswered } = collectScaleAnswers('mai-container', 'mai', SCALES.mai);
+      if (!allAnswered) { alert('请回答所有题目后继续。'); return; }
+      DATA.scale_answers.mai = answers;
+      nextStep('finish');
+    });
+  }
+}
+
+// ============================================================
+// 启动实验
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  showStep('consent');
+});
+</script>
+</body>
+</html>
