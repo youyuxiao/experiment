@@ -761,7 +761,12 @@ function showStep(id) {
     wrapper.id = 'main-wrapper';
     wrapper.style.padding = '20px 16px 60px';
     document.body.appendChild(wrapper);
-    wrapper.innerHTML = steps[id]();
+    const result = steps[id]();
+    if (result instanceof Promise) {
+      result.then(html => { if(html) wrapper.innerHTML = html; });
+    } else {
+      wrapper.innerHTML = result;
+    }
     bindEvents(id);
   }
 }
