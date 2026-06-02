@@ -694,23 +694,8 @@ function exportData() {
   a.download = `exp_data_${DATA.participant_id}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  async function saveToServer(data) {
-  const SUPABASE_URL = 'https://fafnnpnygtfbcfwxchpx.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZm5ucG55Z3RmYmNmd3hjaHB4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzODAwNDIsImV4cCI6MjA5NTk1NjA0Mn0.RPLUVdDYdajI8OaMPlfs73O2amXhxxdMI8QnXofLyyY';
   
-  await fetch(`${SUPABASE_URL}/rest/v1/experiment_data`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`
-    },
-    body: JSON.stringify({
-      participant_id: data.participant_id,
-      data: data
-    })
-  });
-}
+
 }
 
 // ============================================================
